@@ -38,7 +38,9 @@ describe('parseTimeEntry', () => {
       durationSeconds: 3600,
       startedAt: '2024-01-01T10:00:00Z',
       issueKey: 'ABC-123',
-      hasJiraIssue: true
+      hasJiraIssue: true,
+      hasTags: false,
+      tags: []
     });
   });
 
@@ -57,7 +59,9 @@ describe('parseTimeEntry', () => {
       durationSeconds: 1800,
       startedAt: '2024-01-01T14:00:00Z',
       issueKey: null,
-      hasJiraIssue: false
+      hasJiraIssue: false,
+      hasTags: false,
+      tags: []
     });
   });
 

@@ -1,7 +1,7 @@
-import axios from 'axios';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
-import { config } from '../config.js';
+import axios from "axios";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import { config } from "../config.js";
 
 dayjs.extend(utc);
 
@@ -11,41 +11,51 @@ export class JiraClient {
       baseURL: config.jira.apiUrl,
       auth: {
         username: config.jira.email,
-        password: config.jira.apiToken
+        password: config.jira.apiToken,
       },
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
     });
   }
 
-  async createWorkLog(issueKey, timeSpentSeconds, startedAt, comment = '') {
+  async createWorkLog(issueKey, timeSpentSeconds, startedAt, comment = "") {
     try {
       // Handle multi-line comments by splitting into paragraphs
-      const commentLines = comment.split('\n').filter(line => line.trim());
-      const content = commentLines.map(line => ({
-        type: 'paragraph',
-        content: [{
-          text: line,
-          type: 'text'
-        }]
+      const commentLines = comment.split("\n").filter((line) => line.trim());
+      const content = commentLines.map((line) => ({
+        type: "paragraph",
+        content: [
+          {
+            text: line,
+            type: "text",
+          },
+        ],
       }));
-      
+
       const payload = {
         timeSpentSeconds,
-        started: dayjs(startedAt).utc().format('YYYY-MM-DDTHH:mm:ss.SSS') + '+0000',
+        started:
+          dayjs(startedAt).utc().format("YYYY-MM-DDTHH:mm:ss.SSS") + "+0000",
         comment: {
-          type: 'doc',
+          type: "doc",
           version: 1,
-          content: content.length > 0 ? content : [{
-            type: 'paragraph',
-            content: [{
-              text: 'Logged from Toggl Track',
-              type: 'text'
-            }]
-          }]
-        }
+          content:
+            content.length > 0
+              ? content
+              : [
+                  {
+                    type: "paragraph",
+                    content: [
+                      {
+                        text: "Logged from Toggl Track",
+                        type: "text",
+                      },
+                    ],
+                  },
+                ],
+        },
       };
 
       const response = await this.client.post(
@@ -58,7 +68,10 @@ export class JiraClient {
       if (error.response) {
         throw new Error(
           `Failed to create work log for ${issueKey}: ${error.response.status} - ` +
-          `${error.response.data.errorMessages?.join(', ') || error.response.statusText}`
+            `${
+              error.response.data.errorMessages?.join(", ") ||
+              error.response.statusText
+            }`
         );
       }
       throw error;
@@ -68,7 +81,7 @@ export class JiraClient {
   async batchCreateWorkLogs(workLogs) {
     const results = {
       successful: [],
-      failed: []
+      failed: [],
     };
 
     for (const workLog of workLogs) {
@@ -82,12 +95,12 @@ export class JiraClient {
 
         results.successful.push({
           ...workLog,
-          workLogId: result.id
+          workLogId: result.id,
         });
       } catch (error) {
         results.failed.push({
           ...workLog,
-          error: error.message
+          error: error.message,
         });
       }
     }
@@ -98,12 +111,44 @@ export class JiraClient {
   async validateIssueKey(issueKey) {
     try {
       await this.client.get(`/issue/${issueKey}`, {
-        params: { fields: 'key' }
+        params: { fields: "key" },
       });
       return true;
     } catch (error) {
       if (error.response && error.response.status === 404) {
         return false;
+      }
+      throw error;
+    }
+  }
+
+  async bulkFetchIssueIds(issueIdsOrKeys) {
+    try {
+      const payload = {
+        fields: ["id"],
+        issueIdsOrKeys: issueIdsOrKeys,
+      };
+
+      const response = await this.client.post("/issue/bulkfetch", payload);
+
+      // Create a map from issue key to issue ID for easy lookup
+      const issueKeyToIdMap = {};
+      if (response.data && response.data.issues) {
+        response.data.issues.forEach((issue) => {
+          issueKeyToIdMap[issue.key] = parseInt(issue.id);
+        });
+      }
+
+      return issueKeyToIdMap;
+    } catch (error) {
+      if (error.response) {
+        throw new Error(
+          `Failed to fetch issue IDs: ${error.response.status} - ` +
+            `${
+              error.response.data.errorMessages?.join(", ") ||
+              error.response.statusText
+            }`
+        );
       }
       throw error;
     }

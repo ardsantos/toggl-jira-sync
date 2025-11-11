@@ -1,14 +1,14 @@
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { existsSync } from 'fs';
+import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+import { existsSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Try to load .env file from current working directory first (for npm-installed usage)
-const cwdEnvPath = join(process.cwd(), '.env');
-const localEnvPath = join(__dirname, '..', '.env');
+const cwdEnvPath = join(process.cwd(), ".env");
+const localEnvPath = join(__dirname, "..", ".env");
 
 if (existsSync(cwdEnvPath)) {
   dotenv.config({ path: cwdEnvPath });
@@ -25,7 +25,7 @@ export const config = {
     apiToken: process.env.TOGGL_API_TOKEN,
     workspaceId: process.env.TOGGL_WORKSPACE_ID,
     projectId: process.env.TOGGL_PROJECT_ID,
-    apiUrl: 'https://api.track.toggl.com/api/v9'
+    apiUrl: "https://api.track.toggl.com/api/v9",
   },
   jira: {
     apiToken: process.env.JIRA_API_TOKEN,
@@ -33,26 +33,50 @@ export const config = {
     domain: process.env.JIRA_DOMAIN,
     get apiUrl() {
       return `https://${this.domain}/rest/api/3`;
-    }
-  }
+    },
+  },
+  timetracker: {
+    apiToken: process.env.TIMETRACKER_JIRA_API_TOKEN,
+    apiUrl: "https://jttp-cloud.everit.biz/timetracker/api/latest/public",
+  },
 };
 
-export function validateConfig() {
+export function validateConfig(mode = "timetracker") {
   const required = [
-    { key: 'TOGGL_API_TOKEN', value: config.toggl.apiToken },
-    { key: 'TOGGL_WORKSPACE_ID', value: config.toggl.workspaceId },
-    { key: 'TOGGL_PROJECT_ID', value: config.toggl.projectId },
-    { key: 'JIRA_API_TOKEN', value: config.jira.apiToken },
-    { key: 'JIRA_EMAIL', value: config.jira.email },
-    { key: 'JIRA_DOMAIN', value: config.jira.domain }
+    { key: "TOGGL_API_TOKEN", value: config.toggl.apiToken },
+    { key: "TOGGL_WORKSPACE_ID", value: config.toggl.workspaceId },
+    // { key: 'TOGGL_PROJECT_ID', value: config.toggl.projectId }
+    { key: "JIRA_API_TOKEN", value: config.jira.apiToken },
+    { key: "JIRA_EMAIL", value: config.jira.email },
+    { key: "JIRA_DOMAIN", value: config.jira.domain },
   ];
 
-  const missing = required.filter(item => !item.value);
-  
+  // Add mode-specific required variables
+  if (mode === "timetracker") {
+    required.push({
+      key: "TIMETRACKER_JIRA_API_TOKEN",
+      value: config.timetracker.apiToken,
+    });
+  }
+
+  const missing = required.filter((item) => !item.value);
+
   if (missing.length > 0) {
     throw new Error(
-      `Missing required environment variables: ${missing.map(item => item.key).join(', ')}\n` +
-      'Please check your .env file or set these environment variables.'
+      `Missing required environment variables: ${missing
+        .map((item) => item.key)
+        .join(", ")}\n` +
+        "Please check your .env file or set these environment variables."
     );
+  }
+
+  // Check warnings for the other mode
+  if (mode === "jira") {
+    if (!config.timetracker.apiToken) {
+      console.warn(
+        `Warning: TIMETRACKER_JIRA_API_TOKEN is missing.\n` +
+          "Timetracker mode will not be available until this is set."
+      );
+    }
   }
 }

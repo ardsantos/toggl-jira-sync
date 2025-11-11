@@ -58,9 +58,9 @@ function runCLI(args = [], timeout = 5000, clearEnv = false) {
 describe('CLI Smoke Tests', () => {
   test('displays help when no command is provided', async () => {
     const result = await runCLI(['--help']);
-    
+
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('Sync time entries from Toggl Track to Jira work logs');
+    expect(result.stdout).toContain('Sync time entries from Toggl Track to Timetracker or Jira work logs');
     expect(result.stdout).toContain('Commands:');
     expect(result.stdout).toContain('sync');
     expect(result.stdout).toContain('config');
@@ -77,9 +77,9 @@ describe('CLI Smoke Tests', () => {
 
   test('sync command shows help', async () => {
     const result = await runCLI(['sync', '--help']);
-    
+
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('Sync time entries to Jira');
+    expect(result.stdout).toContain('Sync time entries to Timetracker (default) or Jira');
     expect(result.stdout).toContain('--from');
     expect(result.stdout).toContain('--to');
     expect(result.stdout).toContain('--dry-run');

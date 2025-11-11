@@ -31,8 +31,9 @@ describe('formatJiraWorkLog', () => {
       timeSpentSeconds: 3600,
       timeSpentFormatted: '1h 0m',
       startedAt: '2024-01-01T10:00:00Z',
-      comment: 'ABC-123: Implementing feature',
-      entryCount: 1
+      comment: 'Implementing feature',
+      entryCount: 1,
+      entries: entries
     });
   });
 
@@ -56,8 +57,9 @@ describe('formatJiraWorkLog', () => {
       timeSpentSeconds: 2700,
       timeSpentFormatted: '45m',
       startedAt: '2024-01-01T10:00:00Z',
-      comment: 'ABC-123: Implementing feature; ABC-123: Testing feature',
-      entryCount: 2
+      comment: 'Implementing feature; Testing feature',
+      entryCount: 2,
+      entries: entries
     });
   });
 
@@ -76,7 +78,7 @@ describe('formatJiraWorkLog', () => {
     ];
 
     const workLog = formatJiraWorkLog('ABC-123', entries);
-    expect(workLog.comment).toBe('ABC-123: Working on task');
+    expect(workLog.comment).toBe('Working on task');
   });
 });
 
@@ -108,9 +110,7 @@ describe('formatJiraWorkLogWithBreakdown', () => {
       description: 'ABC-123: Implementing feature'
     });
     
-    expect(workLog.comment).toContain('Time breakdown for 1 entry:');
-    expect(workLog.comment).toContain('10:00-11:00 (1h 0m): ABC-123: Implementing feature');
-    expect(workLog.comment).toContain('Total: 1h 0m');
+    expect(workLog.comment).toContain('• Implementing feature');
   });
 
   test('formats work log with time breakdown for multiple entries', () => {
@@ -159,8 +159,9 @@ describe('formatJiraWorkLogWithBreakdown', () => {
       description: 'ABC-123: Evening fixes'
     });
     
-    expect(workLog.comment).toContain('Time breakdown for 3 entries:');
-    expect(workLog.comment).toContain('Total: 1h 30m');
+    expect(workLog.comment).toContain('• Morning work');
+    expect(workLog.comment).toContain('• Afternoon work');
+    expect(workLog.comment).toContain('• Evening fixes');
   });
 
   test('handles entries without description', () => {
@@ -173,9 +174,9 @@ describe('formatJiraWorkLogWithBreakdown', () => {
     ];
 
     const workLog = formatJiraWorkLogWithBreakdown('ABC-123', entries, '2024-01-01');
-    
+
     expect(workLog.timeBreakdown[0].description).toBe('(No description)');
-    expect(workLog.comment).toContain('(No description)');
+    expect(workLog.comment).toBe('• (No description)\n');
   });
 
   test('correctly calculates end times across hour boundaries', () => {
@@ -347,13 +348,12 @@ describe('prepareSummaryData', () => {
     const summary = prepareSummaryData(jiraEntries, nonJiraEntries);
 
     expect(summary.jiraWorkLogs).toHaveLength(2);
-    
-    // Old format should not have timeBreakdown
-    const oldFormatLog = summary.jiraWorkLogs.find(log => log.issueKey === 'ABC-123' && !log.date);
+
+    const oldFormatLog = summary.jiraWorkLogs.find(log => log.issueKey === 'ABC-123');
     expect(oldFormatLog).toBeDefined();
-    expect(oldFormatLog.timeBreakdown).toBeUndefined();
-    
-    // New format should have timeBreakdown
+    expect(oldFormatLog.timeBreakdown).toBeDefined();
+    expect(oldFormatLog.timeBreakdown).toHaveLength(1);
+
     const newFormatLog = summary.jiraWorkLogs.find(log => log.issueKey === 'DEF-456' && log.date);
     expect(newFormatLog).toBeDefined();
     expect(newFormatLog.timeBreakdown).toBeDefined();
@@ -375,13 +375,13 @@ describe('prepareSummaryData', () => {
       }
     };
 
-    const summary = prepareSummaryData(jiraEntries, nonJiraEntries, alreadySyncedEntries);
+    const summary = prepareSummaryData(jiraEntries, nonJiraEntries, [], alreadySyncedEntries);
 
     expect(summary.alreadySynced).toHaveLength(1);
     expect(summary.alreadySynced[0]).toMatchObject({
       issueKey: 'ABC-123',
       timeFormatted: '1h 0m',
-      description: 'ABC-123: Already synced work',
+      description: 'Already synced work',
       entryCount: 1
     });
     

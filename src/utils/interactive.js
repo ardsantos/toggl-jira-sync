@@ -1,6 +1,7 @@
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { formatDuration } from './formatter.js';
+import { groupEntriesByDate } from './entry-helpers.js';
 
 export async function promptForJiraAssignment(groupedNonJiraEntries, jiraClient) {
   if (groupedNonJiraEntries.length === 0) {
@@ -103,37 +104,11 @@ export async function validateAndAssignIssueKey(group, jiraClient) {
 
 export function convertUnassignedToJiraEntries(assignments) {
   const jiraEntries = {};
-  
+
   assignments.forEach(assignment => {
-    // Group entries by date for the assigned issue key
-    const entriesByDate = {};
-    assignment.entries.forEach(entry => {
-      const date = entry.startedAt.split('T')[0];
-      const groupKey = `${assignment.issueKey}_${date}`;
-      
-      if (!entriesByDate[groupKey]) {
-        entriesByDate[groupKey] = {
-          issueKey: assignment.issueKey,
-          date: date,
-          entries: [],
-          totalSeconds: 0
-        };
-      }
-      
-      entriesByDate[groupKey].entries.push(entry);
-      entriesByDate[groupKey].totalSeconds += entry.durationSeconds;
-    });
-    
-    // Sort entries within each group by start time
-    Object.values(entriesByDate).forEach(group => {
-      group.entries.sort((a, b) => 
-        new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()
-      );
-    });
-    
-    // Merge into main jiraEntries object
+    const entriesByDate = groupEntriesByDate(assignment.entries, assignment.issueKey);
     Object.assign(jiraEntries, entriesByDate);
   });
-  
+
   return jiraEntries;
 }
