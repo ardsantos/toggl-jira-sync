@@ -7,7 +7,7 @@ dayjs.extend(utc);
 
 function removeJiraIssueKey(description) {
   if (!description) return description;
-  return description.replace(/\b[A-Z][A-Z0-9]+-\d+:?\s*/g, "").trim();
+  return description.replace(/\b[A-Z][A-Z0-9]+-\d+:?\s*/, "").trim();
 }
 
 export function formatDuration(seconds) {

@@ -296,11 +296,15 @@ async function syncCommand(options) {
     }
 
     // Ask for confirmation
+    const workLogCount = useJira
+      ? summary.jiraWorkLogs.length
+      : summary.jiraWorkLogs.reduce((sum, log) => sum + log.entryCount, 0);
+
     const { confirmed } = await inquirer.prompt([
       {
         type: "confirm",
         name: "confirmed",
-        message: `Create ${summary.jiraWorkLogs.length} work log(s) in ${mode}?`,
+        message: `Create ${workLogCount} work log(s) in ${mode}?`,
         default: false,
       },
     ]);
