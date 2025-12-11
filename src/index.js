@@ -14,6 +14,7 @@ import { config, validateConfig } from "./config.js";
 import { TogglClient } from "./api/toggl.js";
 import { JiraClient } from "./api/jira.js";
 import { TimetrackerClient } from "./api/timetracker.js";
+import { parseDateInput } from "./utils/dateParser.js";
 import {
   parseTimeEntry,
   groupEntriesByDescription,
@@ -152,8 +153,16 @@ async function displaySummary(summary) {
 
 async function syncCommand(options) {
   try {
-    const startDate = dayjs(options.from);
-    const endDate = dayjs(options.to);
+    let startDate, endDate;
+
+    try {
+      startDate = parseDateInput(options.from);
+      endDate = parseDateInput(options.to);
+    } catch (error) {
+      console.error(chalk.red(error.message));
+      process.exit(1);
+    }
+
     const useJira = options.jira || false;
     const mode = useJira ? "jira" : "timetracker";
 
@@ -161,7 +170,7 @@ async function syncCommand(options) {
 
     if (!startDate.isValid() || !endDate.isValid()) {
       console.error(
-        chalk.red("Invalid date format. Please use YYYY-MM-DD format.")
+        chalk.red("Invalid date format. Please use YYYY-MM-DD format or number of days ago (e.g., 7).")
       );
       process.exit(1);
     }
@@ -505,12 +514,12 @@ program
   .description("Sync time entries to Timetracker (default) or Jira")
   .option(
     "-f, --from <date>",
-    "Start date (YYYY-MM-DD)",
+    "Start date (YYYY-MM-DD or days ago, e.g., 7)",
     dayjs().format("YYYY-MM-DD")
   )
   .option(
     "-t, --to <date>",
-    "End date (YYYY-MM-DD)",
+    "End date (YYYY-MM-DD or days ago, e.g., 3)",
     dayjs().format("YYYY-MM-DD")
   )
   .option(

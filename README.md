@@ -103,6 +103,18 @@ toggl-jira-sync --from 2024-01-01 --to 2024-01-31
 node src/index.js sync --from 2024-01-01 --to 2024-01-31
 ```
 
+### Sync entries from N days ago
+```bash
+# Sync entries from 7 days ago to today
+toggl-jira-sync --from 7
+
+# Sync entries from 7 days ago to 3 days ago
+toggl-jira-sync --from 7 --to 3
+
+# Mix formats: from specific date to 3 days ago
+toggl-jira-sync --from 2024-01-01 --to 3
+```
+
 ### Dry run (preview without creating work logs)
 ```bash
 # If installed globally via npm
